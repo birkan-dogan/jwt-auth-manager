@@ -1,0 +1,42 @@
+{
+  "name": "@birkan-dogan/jwt-auth-manager",
+  "version": "1.0.0",
+  "description": "TypeScript JWT authentication manager with refresh token support",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "jest",
+    "dev": "tsc --watch"
+  },
+  "keywords": [
+    "jwt",
+    "authentication",
+    "refresh-token",
+    "typescript",
+    "nodejs"
+  ],
+  "author": "Birkan Doğan",
+  "license": "MIT",
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2",
+    "crypto": "^1.0.1"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.3",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "jest": "^29.0.0",
+    "@types/jest": "^29.0.0",
+    "ts-jest": "^29.0.0"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/birkan-dogan/jwt-auth-manager"
+  }
+}
