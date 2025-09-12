@@ -1,4 +1,6 @@
 import jwt, { VerifyOptions } from "jsonwebtoken";
+
+// types
 import { AuthContext, Result } from "../types";
 
 // verifying access token

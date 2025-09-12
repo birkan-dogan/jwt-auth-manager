@@ -1,4 +1,9 @@
 import jwt, { SignOptions } from "jsonwebtoken";
+
+// functions
+import { parseExpiry, generateDeviceHash, generateJti } from "../utils/helper";
+
+// types
 import {
   User,
   TokenPair,
@@ -6,7 +11,6 @@ import {
   DeviceInfo,
   RefreshTokenData,
 } from "../types";
-import { parseExpiry, generateDeviceHash, generateJti } from "../utils/helper";
 
 // Generating access token
 export const generateAccessToken = (
