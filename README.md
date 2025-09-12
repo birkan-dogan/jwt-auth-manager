@@ -421,7 +421,7 @@ app.post("/refresh", async (req, res) => {
 | Her iki token çalındı | 7 gün erişim      | ⭐⭐⭐ (Ek güvenlik önlemleri ile) |
 | Man-in-the-middle     | Token ele geçirme | ⭐⭐⭐⭐⭐ (HTTPS zorunlu)         |
 
-**Sonuç:** Refresh token çalınması ciddi bir güvenlik riskidir, ancak yukarıdaki önlemlerle risiko minimize edilebilir. En kritik nokta token rotation ve anomali tespiti sistemlerinin aktif olmasıdır.
+**Sonuç:** Refresh token çalınması ciddi bir güvenlik riskidir, ancak yukarıdaki önlemlerle risk minimize edilebilir. En kritik nokta token rotation ve anomali tespiti sistemlerinin aktif olmasıdır.
 
 ### Güvenlik
 
