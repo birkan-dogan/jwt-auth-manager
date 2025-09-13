@@ -1,6 +1,6 @@
 /*
 
-import { TokenStorage, RefreshTokenData } from '@birkan-dogan/jwt-auth-manager';
+import { TokenStorage, RefreshTokenData } from 'jwt-auth-manager';
 import { createClient, RedisClientType } from 'redis';
 
 // Create Redis client

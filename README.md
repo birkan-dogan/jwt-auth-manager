@@ -26,7 +26,7 @@ A production-ready, type-safe JWT authentication system with advanced security f
 ## 📦 Installation
 
 ```bash
-npm install @birkan-dogan/jwt-auth-manager
+npm install jwt-auth-manager
 ```
 
 **Required dependencies:**
@@ -49,7 +49,7 @@ import {
   generateTokenPair,
   refreshTokens,
   createAuthMiddleware,
-} from "@birkan-dogan/jwt-auth-manager";
+} from "jwt-auth-manager";
 
 // Create storage (use createMemoryStorage for development)
 const storage = createMemoryStorage();
@@ -154,7 +154,7 @@ The library uses a storage interface that you can implement for any database.
 ### Built-in Memory Storage
 
 ```typescript
-import { createMemoryStorage } from "@birkan-dogan/jwt-auth-manager";
+import { createMemoryStorage } from "jwt-auth-manager";
 
 const storage = createMemoryStorage();
 // Perfect for development and testing
@@ -163,7 +163,7 @@ const storage = createMemoryStorage();
 ### Custom Storage Implementation
 
 ```typescript
-import { TokenStorage, RefreshTokenData } from "@birkan-dogan/jwt-auth-manager";
+import { TokenStorage, RefreshTokenData } from "jwt-auth-manager";
 
 const createCustomStorage = (): TokenStorage => ({
   async saveRefreshToken(data: Omit<RefreshTokenData, "id">): Promise<string> {
@@ -295,7 +295,7 @@ import {
   createAuthMiddleware,
   logoutUser,
   logoutDevice,
-} from "@birkan-dogan/jwt-auth-manager";
+} from "jwt-auth-manager";
 
 const app = express();
 app.use(express.json());
@@ -453,7 +453,7 @@ import {
   createMemoryStorage,
   generateTokenPair,
   verifyAccessToken,
-} from "@birkan-dogan/jwt-auth-manager";
+} from "jwt-auth-manager";
 
 describe("JWT Auth Manager", () => {
   const storage = createMemoryStorage();

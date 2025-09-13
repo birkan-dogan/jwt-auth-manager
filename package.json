@@ -1,5 +1,5 @@
 {
-  "name": "@birkan-dogan/jwt-auth-manager",
+  "name": "jwt-auth-manager",
   "version": "1.0.0",
   "description": "TypeScript JWT authentication manager with refresh token support",
   "main": "dist/index.js",

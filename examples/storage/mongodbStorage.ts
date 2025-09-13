@@ -2,7 +2,7 @@
 // MongoDB storage implementation with enhanced cleanup strategies
 
 import { MongoClient, Db, Collection } from 'mongodb';
-import { TokenStorage, RefreshTokenData } from '@birkan-dogan/jwt-auth-manager';
+import { TokenStorage, RefreshTokenData } from 'jwt-auth-manager';
 
 export interface MongoRefreshToken {
   _id?: string;
@@ -177,7 +177,7 @@ import {
   createAuthContext, 
   generateTokenPair, 
   refreshTokens 
-} from '@birkan-dogan/jwt-auth-manager';
+} from 'jwt-auth-manager';
 
 const main = async () => {
   // Connect to MongoDB

@@ -1,7 +1,7 @@
 /*
 // Custom storage implementation for JWT tokens
 import { MongoClient, Db, Collection } from 'mongodb';
-import { TokenStorage, RefreshTokenData } from '@birkan-dogan/jwt-auth-manager';
+import { TokenStorage, RefreshTokenData } from 'jwt-auth-manager';
 
 export interface MongoRefreshToken {
   _id?: string;

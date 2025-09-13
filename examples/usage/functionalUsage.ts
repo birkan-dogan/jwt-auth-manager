@@ -11,7 +11,7 @@ import {
   AuthContext,
   DeviceInfo,
   verifyAccessToken
-} from '@birkan-dogan/jwt-auth-manager';
+} from 'jwt-auth-manager';
 
 const app = express();
 app.use(express.json());
