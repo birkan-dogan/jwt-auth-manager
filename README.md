@@ -1,10 +1,10 @@
 # 🔐 JWT Auth Manager
 
-> **Functional TypeScript JWT authentication library with refresh token support**
+> **Functional TypeScript JWT authentication library with refresh token support and built-in rate limiting**
 
-A production-ready, type-safe JWT authentication system with advanced security features like token rotation, concurrent usage detection, and device fingerprinting.
+A production-ready, type-safe JWT authentication system with advanced security features like token rotation, concurrent usage detection, device fingerprinting, and comprehensive rate limiting protection.
 
-[![npm version](https://badge.fury.io/js/%birkan-dogan%2Fjwt-auth-manager.svg)](https://badge.fury.io/js/%birkan-dogan%2Fjwt-auth-manager)
+[![npm version](https://badge.fury.io/js/jwt-auth-manager.svg)](https://badge.fury.io/js/jwt-auth-manager)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -12,14 +12,26 @@ A production-ready, type-safe JWT authentication system with advanced security f
 
 ## ✨ Features
 
-- 🔒 **Secure by Default**: Token rotation, concurrent usage detection
-- 🎯 **Functional Design**: Pure functions, immutable operations
-- 📘 **Full TypeScript**: Complete type safety and IntelliSense support
-- 🔌 **Flexible Storage**: Use any database with the storage interface
-- 🚀 **Production Ready**: Built-in security features and error handling
-- 🎨 **Express.js Integration**: Ready-to-use middleware
-- 📱 **Device Tracking**: Optional device fingerprinting support
-- 🧪 **Test Friendly**: Easy to test with dependency injection
+### 🔐 **JWT Authentication**
+
+- **Secure by Default**: Token rotation, concurrent usage detection
+- **Device Tracking**: Optional device fingerprinting support
+- **Flexible Storage**: Use any database with the storage interface
+- **Express.js Integration**: Ready-to-use middleware
+
+### 🛡️ **Rate Limiting & Security**
+
+- **Built-in Rate Limiting**: IP-based request limiting
+- **Brute Force Protection**: Account lockout after failed attempts
+- **IP Whitelist/Blacklist**: Allow trusted IPs, block malicious ones
+- **Real-time Alerts**: Webhook and email notifications
+
+### 🎯 **Developer Experience**
+
+- **Functional Design**: Pure functions, immutable operations
+- **Full TypeScript**: Complete type safety and IntelliSense support
+- **Production Ready**: Built-in security features and error handling
+- **Test Friendly**: Easy to test with dependency injection
 
 ---
 
@@ -40,7 +52,7 @@ npm install -D @types/jsonwebtoken
 
 ## 🚀 Quick Start
 
-### 1. Basic Setup
+### 1. Basic JWT Authentication
 
 ```typescript
 import {
@@ -64,29 +76,18 @@ const authContext = createAuthContext(
   },
   storage
 );
-```
-
-### 2. Generate Tokens
-
-```typescript
-const user = { id: "user123", email: "user@example.com" };
 
 // Generate tokens
+const user = { id: "user123", email: "user@example.com" };
 const tokens = await generateTokenPair(user, authContext);
 console.log(tokens);
 // { accessToken: "eyJhbGc...", refreshToken: "eyJhbGc..." }
-```
 
-### 3. Refresh Tokens
-
-```typescript
 // Refresh expired tokens
 const newTokens = await refreshTokens(tokens.refreshToken, authContext);
-console.log(newTokens);
-// { accessToken: "new_token...", refreshToken: "new_refresh..." }
 ```
 
-### 4. Express.js Middleware
+### 2. Express.js Middleware
 
 ```typescript
 import express from "express";
@@ -100,11 +101,41 @@ app.get("/profile", authenticateToken, (req: any, res) => {
 });
 ```
 
+### 3. Add Rate Limiting Protection
+
+```typescript
+import {
+  createRateLimitContext,
+  createMemoryRateLimitStorage,
+  createRateLimitPipeline,
+} from "jwt-auth-manager";
+
+// Create rate limiting context
+const rateLimitStorage = createMemoryRateLimitStorage();
+const rateLimitContext = createRateLimitContext(
+  {
+    maxAttempts: 5, // 5 attempts per window
+    windowMs: 15 * 60 * 1000, // 15 minutes window
+    blockDurationMs: 60 * 60 * 1000, // 1 hour block
+  },
+  rateLimitStorage
+);
+
+// Apply rate limiting to login endpoint
+app.post(
+  "/login",
+  ...createRateLimitPipeline(rateLimitContext),
+  async (req, res) => {
+    // Your login logic here
+  }
+);
+```
+
 ---
 
-## 🔧 Advanced Configuration
+## 🔐 JWT Authentication
 
-### Security Options
+### Advanced Configuration
 
 ```typescript
 const authContext = createAuthContext(
@@ -145,22 +176,221 @@ const newTokens = await refreshTokens(
 );
 ```
 
+### Security Features
+
+#### Token Rotation
+
+Every refresh operation generates new access and refresh tokens, invalidating the old ones.
+
+```typescript
+// Old refresh token becomes invalid after use
+const newTokens = await refreshTokens(oldRefreshToken, authContext);
+// oldRefreshToken is now blacklisted
+```
+
+#### Concurrent Usage Detection
+
+If the same refresh token is used multiple times, all user tokens are invalidated.
+
+```typescript
+// First usage - OK
+const tokens1 = await refreshTokens(refreshToken, authContext);
+
+// Second usage of same token - Security violation!
+// All user tokens will be invalidated
+try {
+  const tokens2 = await refreshTokens(refreshToken, authContext);
+} catch (error) {
+  console.log(error.message); // "Concurrent token usage detected"
+}
+```
+
+#### Device Fingerprinting
+
+Tokens can be tied to specific devices using fingerprints.
+
+```typescript
+const deviceInfo = { fingerprint: "unique_device_id" };
+const tokens = await generateTokenPair(user, authContext, deviceInfo);
+
+// This will fail if used from a different device
+await refreshTokens(tokens.refreshToken, authContext, {
+  fingerprint: "different_device",
+});
+```
+
+---
+
+## 🛡️ Rate Limiting & Brute Force Protection
+
+### Basic Usage
+
+```typescript
+import {
+  createRateLimitContext,
+  createMemoryRateLimitStorage,
+  createRateLimitPipeline,
+} from "jwt-auth-manager";
+
+// Create rate limit context
+const storage = createMemoryRateLimitStorage();
+const rateLimitContext = createRateLimitContext(
+  {
+    maxAttempts: 5, // 5 attempts per window
+    windowMs: 15 * 60 * 1000, // 15 minutes window
+    blockDurationMs: 60 * 60 * 1000, // 1 hour block
+  },
+  storage
+);
+
+// Apply to Express.js app
+const rateLimitPipeline = createRateLimitPipeline(rateLimitContext);
+app.use(...rateLimitPipeline);
+```
+
+### Advanced Configuration
+
+```typescript
+const rateLimitContext = createRateLimitContext(
+  {
+    // Basic rate limiting
+    maxAttempts: 5,
+    windowMs: 15 * 60 * 1000,
+    blockDurationMs: 60 * 60 * 1000,
+    skipSuccessfulRequests: false,
+
+    // IP Security
+    whitelist: ["192.168.1.0/24"], // Trusted IPs
+    blacklist: ["10.0.0.0/8"], // Blocked IPs
+
+    // Brute force protection
+    bruteForce: {
+      enabled: true,
+      maxFailedAttempts: 10, // Lock account after 10 failures
+      lockoutDurationMs: 2 * 60 * 60 * 1000, // 2 hours lockout
+      resetCountOnSuccess: true, // Reset counter on successful login
+    },
+
+    // Security alerts
+    alerts: {
+      enabled: true,
+      threshold: 3, // Alert after 3 attempts
+      webhook: "https://hooks.slack.com/webhook/your-webhook",
+      email: "security@yourcompany.com",
+    },
+  },
+  storage
+);
+```
+
+### Manual Rate Limiting
+
+For custom endpoints or non-middleware usage:
+
+```typescript
+import { checkRateLimit, recordAttempt } from "jwt-auth-manager";
+
+app.post("/custom-endpoint", async (req, res) => {
+  const identifier = req.ip;
+  const userId = req.body.userId;
+
+  // Check rate limit
+  const rateLimitResult = await checkRateLimit(
+    identifier,
+    rateLimitContext,
+    userId
+  );
+
+  if (!rateLimitResult.allowed) {
+    return res.status(429).json({
+      error: "Too Many Requests",
+      message: rateLimitResult.reason,
+      retryAfter: rateLimitResult.retryAfter,
+    });
+  }
+
+  try {
+    // Your business logic
+    const result = await processRequest(req.body);
+
+    // Record successful attempt
+    await recordAttempt(identifier, rateLimitContext, true, userId);
+
+    res.json(result);
+  } catch (error) {
+    // Record failed attempt
+    await recordAttempt(identifier, rateLimitContext, false, userId);
+
+    res.status(500).json({ error: "Processing failed" });
+  }
+});
+```
+
+### Admin Management
+
+```typescript
+import { unlockUser, unlockIP, getRateLimitStatus } from "jwt-auth-manager";
+
+// Unlock locked user account
+app.post("/admin/unlock-user/:userId", async (req, res) => {
+  await unlockUser(req.params.userId, rateLimitContext);
+  res.json({ message: "User account unlocked" });
+});
+
+// Unlock blocked IP address
+app.post("/admin/unlock-ip/:ip", async (req, res) => {
+  await unlockIP(req.params.ip, rateLimitContext);
+  res.json({ message: "IP address unlocked" });
+});
+
+// Get rate limit status
+app.get("/admin/rate-limit-status/:identifier", async (req, res) => {
+  const status = await getRateLimitStatus(
+    req.params.identifier,
+    rateLimitContext,
+    req.query.userId as string
+  );
+  res.json(status);
+});
+```
+
+### Response Headers
+
+The middleware automatically adds rate limiting headers:
+
+```
+X-RateLimit-Limit: 5
+X-RateLimit-Remaining: 3
+X-RateLimit-Reset: 2024-01-15T10:30:00Z
+Retry-After: 3600
+```
+
 ---
 
 ## 🗄️ Storage Adapters
 
-The library uses a storage interface that you can implement for any database.
+The library uses storage interfaces that you can implement for any database.
 
-### Built-in Memory Storage
+### Built-in Storage Options
 
 ```typescript
-import { createMemoryStorage } from "jwt-auth-manager";
+import {
+  createMemoryStorage,
+  createMemoryRateLimitStorage,
+} from "jwt-auth-manager";
 
-const storage = createMemoryStorage();
+// JWT token storage
+const jwtStorage = createMemoryStorage();
 // Perfect for development and testing
+
+// Rate limiting storage
+const rateLimitStorage = createMemoryRateLimitStorage();
+// Good for development and testing
 ```
 
 ### Custom Storage Implementation
+
+#### JWT Token Storage
 
 ```typescript
 import { TokenStorage, RefreshTokenData } from "jwt-auth-manager";
@@ -194,13 +424,29 @@ const createCustomStorage = (): TokenStorage => ({
 });
 ```
 
----
+#### Rate Limiting Storage
 
-## 📚 Storage Examples
+```typescript
+import { RateLimitStorage } from "jwt-auth-manager";
+
+const createCustomRateLimitStorage = (): RateLimitStorage => ({
+  async getRateLimitEntry(key: string) {
+    // Your implementation
+  },
+
+  async saveRateLimitEntry(key: string, entry: RateLimitEntry, ttl: number) {
+    // Your implementation
+  },
+
+  // ... implement all required methods
+});
+```
+
+### Storage Examples
 
 We provide complete storage implementations in the `examples` folder:
 
-### MongoDB Example
+#### MongoDB Example
 
 ```typescript
 // Copy from examples/mongodbStorage.ts
@@ -213,18 +459,7 @@ const db = client.db("auth_app");
 const storage = createMongoDBStorage(db);
 ```
 
-### PostgreSQL Example
-
-```typescript
-// Copy from examples/postgresStorage.ts
-import { createPostgreSQLStorage } from "./examples/postgresStorage";
-import { Pool } from "pg";
-
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const storage = createPostgreSQLStorage(pool);
-```
-
-### Redis Example
+#### Redis Example
 
 ```typescript
 // Copy from examples/redisStorage.ts
@@ -236,49 +471,15 @@ await client.connect();
 const storage = createRedisStorage(client);
 ```
 
----
-
-## 🛡️ Security Features
-
-### Token Rotation
-
-Every refresh operation generates new access and refresh tokens, invalidating the old ones.
+#### PostgreSQL Example
 
 ```typescript
-// Old refresh token becomes invalid after use
-const newTokens = await refreshTokens(oldRefreshToken, authContext);
-// oldRefreshToken is now blacklisted
-```
+// Copy from examples/postgresStorage.ts
+import { createPostgreSQLStorage } from "./examples/postgresStorage";
+import { Pool } from "pg";
 
-### Concurrent Usage Detection
-
-If the same refresh token is used multiple times, all user tokens are invalidated.
-
-```typescript
-// First usage - OK
-const tokens1 = await refreshTokens(refreshToken, authContext);
-
-// Second usage of same token - Security violation!
-// All user tokens will be invalidated
-try {
-  const tokens2 = await refreshTokens(refreshToken, authContext);
-} catch (error) {
-  console.log(error.message); // "Concurrent token usage detected"
-}
-```
-
-### Device Fingerprinting
-
-Tokens can be tied to specific devices using fingerprints.
-
-```typescript
-const deviceInfo = { fingerprint: "unique_device_id" };
-const tokens = await generateTokenPair(user, authContext, deviceInfo);
-
-// This will fail if used from a different device
-await refreshTokens(tokens.refreshToken, authContext, {
-  fingerprint: "different_device",
-});
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const storage = createPostgreSQLStorage(pool);
 ```
 
 ---
@@ -295,12 +496,15 @@ import {
   createAuthMiddleware,
   logoutUser,
   logoutDevice,
+  createRateLimitContext,
+  createMemoryRateLimitStorage,
+  createRateLimitPipeline,
 } from "jwt-auth-manager";
 
 const app = express();
 app.use(express.json());
 
-// Setup auth context
+// JWT Authentication setup
 const storage = createMemoryStorage();
 const authContext = createAuthContext(
   {
@@ -317,6 +521,27 @@ const authContext = createAuthContext(
   }
 );
 
+// Rate Limiting setup
+const rateLimitStorage = createMemoryRateLimitStorage();
+const rateLimitContext = createRateLimitContext(
+  {
+    maxAttempts: 5,
+    windowMs: 15 * 60 * 1000,
+    blockDurationMs: 60 * 60 * 1000,
+    bruteForce: {
+      enabled: true,
+      maxFailedAttempts: 10,
+      lockoutDurationMs: 2 * 60 * 60 * 1000,
+    },
+    alerts: {
+      enabled: true,
+      threshold: 3,
+      webhook: process.env.SECURITY_WEBHOOK,
+    },
+  },
+  rateLimitStorage
+);
+
 // Middleware
 const authenticateToken = createAuthMiddleware(authContext);
 
@@ -327,25 +552,41 @@ const extractDeviceInfo = (req: express.Request) => ({
   userAgent: req.headers["user-agent"],
 });
 
-// Routes
-app.post("/login", async (req, res) => {
-  try {
-    // Your user authentication logic here
-    const user = await authenticateUser(req.body.email, req.body.password);
-    const deviceInfo = extractDeviceInfo(req);
+// Rate limited + authenticated login endpoint
+app.post(
+  "/login",
+  // Apply rate limiting pipeline
+  ...createRateLimitPipeline(rateLimitContext),
 
-    const tokens = await generateTokenPair(user, authContext, deviceInfo);
+  async (req, res) => {
+    try {
+      // 1. Validate input
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password required" });
+      }
 
-    res.json({
-      message: "Login successful",
-      ...tokens,
-    });
-  } catch (error) {
-    res.status(401).json({
-      error: error instanceof Error ? error.message : "Authentication failed",
-    });
+      // 2. Authenticate user
+      const user = await authenticateUser(req.body.email, req.body.password);
+      const deviceInfo = extractDeviceInfo(req);
+
+      // 3. Generate JWT tokens
+      const tokens = await generateTokenPair(user, authContext, deviceInfo);
+
+      // 4. Success response
+      res.json({
+        message: "Login successful",
+        user: { id: user.id, email: user.email },
+        ...tokens,
+      });
+    } catch (error) {
+      // Rate limiting middleware automatically records this as a failed attempt
+      res.status(401).json({
+        error: error instanceof Error ? error.message : "Authentication failed",
+      });
+    }
   }
-});
+);
 
 app.post("/refresh", async (req, res) => {
   try {
@@ -429,17 +670,47 @@ Invalidates all tokens for a specific user.
 
 Invalidates specific refresh token (single device logout).
 
+### Rate Limiting Functions
+
+#### `createRateLimitContext(options, storage)`
+
+Creates rate limiting context with configuration and storage.
+
+#### `checkRateLimit(identifier, context, userId?)`
+
+Checks if request should be rate limited.
+
+#### `recordAttempt(identifier, context, success, userId?)`
+
+Records an attempt (success or failure).
+
+#### `unlockUser(userId, context)`
+
+Manually unlocks a user account.
+
+#### `unlockIP(identifier, context)`
+
+Manually unlocks an IP address.
+
 ### Middleware
 
 #### `createAuthMiddleware(authContext)`
 
 Creates Express.js middleware for protecting routes.
 
+#### `createRateLimitPipeline(rateLimitContext)`
+
+Creates Express.js rate limiting middleware pipeline.
+
 ### Storage
 
 #### `createMemoryStorage()`
 
-Creates in-memory storage for development/testing.
+Creates in-memory storage for JWT tokens (development/testing).
+
+#### `createMemoryRateLimitStorage()`
+
+Creates in-memory storage for rate limiting (development/testing).
 
 ---
 
@@ -453,6 +724,9 @@ import {
   createMemoryStorage,
   generateTokenPair,
   verifyAccessToken,
+  createRateLimitContext,
+  createMemoryRateLimitStorage,
+  checkRateLimit,
 } from "jwt-auth-manager";
 
 describe("JWT Auth Manager", () => {
@@ -477,6 +751,24 @@ describe("JWT Auth Manager", () => {
     expect(result.data.userId).toBe("test-user");
   });
 });
+
+describe("Rate Limiting", () => {
+  const rateLimitStorage = createMemoryRateLimitStorage();
+  const rateLimitContext = createRateLimitContext(
+    {
+      maxAttempts: 3,
+      windowMs: 60 * 1000,
+      blockDurationMs: 60 * 1000,
+    },
+    rateLimitStorage
+  );
+
+  it("should allow requests within limit", async () => {
+    const result = await checkRateLimit("127.0.0.1", rateLimitContext);
+    expect(result.allowed).toBe(true);
+    expect(result.remaining).toBe(2);
+  });
+});
 ```
 
 ---
@@ -491,6 +783,9 @@ REFRESH_TOKEN_SECRET=your-super-secret-refresh-key-min-32-chars
 # Optional
 ACCESS_TOKEN_EXPIRY=15m
 REFRESH_TOKEN_EXPIRY=7d
+
+# Security (Optional)
+SECURITY_WEBHOOK=https://hooks.slack.com/webhook/your-webhook
 ```
 
 **⚠️ Security Note**: Use strong, unique secrets (minimum 32 characters) and store them securely.
@@ -504,8 +799,10 @@ REFRESH_TOKEN_EXPIRY=7d
 3. **Secure Storage**: Store refresh tokens securely (httpOnly cookies recommended)
 4. **Short Access Token Lifetime**: Keep access tokens short-lived (15-30 minutes)
 5. **Token Rotation**: Always enable token rotation in production
-6. **Rate Limiting**: Implement rate limiting on auth endpoints
+6. **Rate Limiting**: Apply rate limiting to authentication endpoints
 7. **Monitoring**: Monitor for suspicious authentication patterns
+8. **IP Security**: Use whitelist/blacklist for known good/bad IPs
+9. **Alert Systems**: Set up real-time security alerts
 
 ---
 
@@ -516,6 +813,7 @@ REFRESH_TOKEN_EXPIRY=7d
 3. **TTL Indexes**: Use TTL indexes for automatic token cleanup (MongoDB)
 4. **Caching**: Consider Redis for high-performance token storage
 5. **Cleanup Jobs**: Regularly clean up expired tokens
+6. **Rate Limit Storage**: Use Redis for distributed rate limiting
 
 ---
 
@@ -539,6 +837,12 @@ npm install @types/jsonwebtoken@latest
 
 - Memory storage is cleared on app restart
 - Use persistent storage (MongoDB, PostgreSQL, etc.) for production
+
+**Rate limiting not working:**
+
+- Check if rate limiting storage is properly configured
+- Verify middleware order in Express.js
+- Ensure proper IP extraction from requests
 
 ---
 
@@ -600,6 +904,8 @@ src/
 │   ├── tokenVerification.ts
 │   ├── tokenRefresh.ts
 │   └── tokenInvalidation.ts
+├── security/               # Rate limiting & security features
+│   └── rateLimiting.ts
 ├── middleware/             # Express.js middleware
 │   └── authMiddleware.ts
 ├── storage/                # Storage implementations
@@ -626,6 +932,7 @@ examples/                   # Database storage examples
 - 🎉 Initial release with functional architecture
 - ✨ Token rotation and concurrent usage detection
 - 🔒 Device fingerprinting support
+- 🛡️ Built-in rate limiting and brute force protection
 - 📘 Full TypeScript support
 - 🔌 Express.js middleware
 - 🗃️ Flexible storage interface
@@ -691,6 +998,16 @@ const authContext = createAuthContext(
 );
 ```
 
+### Q: How does rate limiting work with multiple servers?
+
+**A:** Use a shared storage like Redis for rate limiting:
+
+```typescript
+// Use Redis for distributed rate limiting
+const redisClient = createClient();
+const rateLimitStorage = createRedisRateLimitStorage(redisClient);
+```
+
 ### Q: Can I customize token payload?
 
 **A:** Yes, modify the `generateTokenPair` function or extend it:
@@ -704,24 +1021,6 @@ const generateCustomTokenPair = async (
   // Add custom data to user object
   const extendedUser = { ...user, ...customData };
   return generateTokenPair(extendedUser, authContext);
-};
-```
-
-### Q: How do I handle multiple concurrent requests during token refresh?
-
-**A:** Implement request queuing:
-
-```typescript
-let refreshPromise: Promise<any> | null = null;
-
-const refreshTokens = async () => {
-  if (!refreshPromise) {
-    refreshPromise = axios.post("/refresh", { refreshToken });
-    const response = await refreshPromise;
-    refreshPromise = null;
-    return response;
-  }
-  return refreshPromise;
 };
 ```
 
@@ -753,7 +1052,7 @@ MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🚀 Roadmap
 
-- [ ] Built-in rate limiting support
+- [x] Built-in rate limiting support
 - [ ] WebSocket authentication support
 - [ ] OAuth2 integration helpers
 - [ ] Multi-tenant support
