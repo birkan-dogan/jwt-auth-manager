@@ -6,12 +6,11 @@ import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken } from '../core/tokenVerification';
 
 // types
-import { AuthContext } from '../types';
+import { AuthContext, AccessTokenPayload } from '../types';
 
 export interface AuthRequest extends Request {
-  user?: any;
+  user?: AccessTokenPayload;
 }
-
 
 export const createAuthMiddleware = (context: AuthContext) => 
   (req: AuthRequest, res: Response, next: NextFunction): void => {

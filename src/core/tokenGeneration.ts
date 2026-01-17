@@ -10,6 +10,8 @@ import {
   AuthContext,
   DeviceInfo,
   RefreshTokenData,
+  AccessTokenPayload,
+  RefreshTokenPayload,
 } from "../types";
 
 // Generating access token
@@ -17,14 +19,14 @@ export const generateAccessToken = (
   user: User,
   context: AuthContext
 ): string => {
-  const payload = {
+  const payload: Omit<AccessTokenPayload, "iat" | "exp"> = {
     userId: user.id,
     email: user.email,
     type: "access",
   };
 
   const options: SignOptions = {
-    expiresIn: context.config.accessTokenExpiry as any,
+    expiresIn: parseExpiry(context.config.accessTokenExpiry),
   };
 
   return jwt.sign(payload, context.config.accessTokenSecret, options);
@@ -36,7 +38,9 @@ export const generateRefreshToken = (
   context: AuthContext,
   deviceInfo?: DeviceInfo
 ): string => {
-  const payload: any = {
+  const payload: Omit<RefreshTokenPayload, "iat" | "exp"> & {
+    deviceHash?: string;
+  } = {
     userId: user.id,
     type: "refresh",
     jti: generateJti(),
@@ -50,7 +54,7 @@ export const generateRefreshToken = (
   }
 
   const options: SignOptions = {
-    expiresIn: context.config.accessTokenExpiry as any,
+    expiresIn: parseExpiry(context.config.refreshTokenExpiry),
   };
 
   return jwt.sign(payload, context.config.refreshTokenSecret, options);

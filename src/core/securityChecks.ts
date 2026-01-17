@@ -2,7 +2,7 @@
 import { generateDeviceHash } from '../utils/helper';
 
 // types
-import { RefreshTokenData, DeviceInfo, AuthContext } from '../types';
+import { RefreshTokenData, DeviceInfo, AuthContext, RefreshTokenPayload } from '../types';
 
 // Controlling for concurrent token usage
 export const checkConcurrentUsage = async (
@@ -17,7 +17,7 @@ export const checkConcurrentUsage = async (
 
 // Checking device fingerprint
 export const checkDeviceFingerprint = (
-  decoded: any,
+  decoded: RefreshTokenPayload,
   deviceInfo?: DeviceInfo
 ): void => {
   if (decoded.deviceHash && deviceInfo?.fingerprint) {
@@ -42,7 +42,7 @@ export const checkTokenExpiry = async (
 // Performing all security checks
 export const performSecurityChecks = async (
   tokenData: RefreshTokenData,
-  decoded: any,
+  decoded: RefreshTokenPayload,
   context: AuthContext,
   deviceInfo?: DeviceInfo
 ): Promise<void> => {

@@ -24,7 +24,7 @@ export const refreshTokens = async (
   // Get token data from storage
   const tokenData = await context.storage.getRefreshToken(refreshToken);
   if (!tokenData) {
-    throw new Error('Invalid refresh token');
+    throw new Error('Refresh token not found in storage');
   }
 
   // Perform security checks

@@ -38,6 +38,7 @@ const sendAlert = async (
   };
 
   // Send webhook alert
+  // Note: fetch is available in Node.js 18+ as a global
   if (options.alerts.webhook) {
     try {
       await fetch(options.alerts.webhook, {

@@ -61,3 +61,20 @@ export interface AuthContext {
 export type Result<T, E = Error> =
   | { success: true; data: T }
   | { success: false; error: E };
+
+export interface AccessTokenPayload {
+  userId: string | number;
+  email?: string;
+  type: "access";
+  iat?: number;
+  exp?: number;
+}
+
+export interface RefreshTokenPayload {
+  userId: string | number;
+  type: "refresh";
+  jti: string;
+  deviceHash?: string;
+  iat?: number;
+  exp?: number;
+}
